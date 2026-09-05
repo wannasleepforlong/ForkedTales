@@ -4,6 +4,9 @@ import { requireUser } from "@/lib/auth";
 import { StoryMetaForm } from "./StoryMetaForm";
 import { DeleteStoryButton } from "./DeleteStoryButton";
 import { FlagsPanel, type FlagRow } from "./FlagsPanel";
+import { LintPanel } from "./LintPanel";
+import { lintStory } from "@/lib/engine/lint";
+import { loadStoryGraph } from "@/lib/storyGraph";
 
 export const dynamic = "force-dynamic";
 
@@ -104,6 +107,18 @@ export default async function StoryEditPage({
       </section>
 
       <section className="mt-12">
+        <h2 className="font-serif text-2xl text-parchment/85">Linter</h2>
+        <p className="text-xs text-parchment/50">
+          Static checks over the whole story — unreachable chapters,
+          dead-ends, missing targets, and stale condition/effect
+          references.
+        </p>
+        <div className="mt-3">
+          <LintSectionServer storyId={story.id} />
+        </div>
+      </section>
+
+      <section className="mt-12">
         <div className="flex items-center justify-between">
           <h2 className="font-serif text-2xl text-parchment/85">Chapters</h2>
           <Link
@@ -146,4 +161,26 @@ export default async function StoryEditPage({
       </section>
     </main>
   );
+}
+
+async function LintSectionServer({ storyId }: { storyId: string }) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase/server");
+  const supabase = createSupabaseServerClient();
+  const graph = await loadStoryGraph(supabase, storyId, { includeDrafts: true });
+  if (!graph) return null;
+  const chapterTitles: Record<string, string> = {};
+  for (const c of graph.chapters) chapterTitles[c.id] = c.title;
+  const issues = lintStory({
+    startChapterId: graph.story.startChapterId,
+    chapters: graph.chapters.map((c) => ({
+      id: c.id,
+      title: c.title,
+      isEnding: c.isEnding,
+      draft: c.draft,
+      unlockCondition: c.unlockCondition,
+    })),
+    choices: graph.choices,
+    flagKeys: graph.flagDefs.map((f) => f.key),
+  });
+  return <LintPanel storyId={storyId} chapterTitles={chapterTitles} issues={issues} />;
 }
