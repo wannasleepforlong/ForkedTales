@@ -28,6 +28,15 @@ type PathStep = { seq: number; chapterId: string; choiceId: string | null };
  *    the trail so far). Click a step to fork a new slot from there.
  *  - Endings: gallery of endings, discovered ones lit up.
  */
+export type AchievementCard = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  icon: string | null;
+  unlocked: boolean;
+};
+
 export function StoryExplorer({
   storyId,
   storySlug,
@@ -39,6 +48,7 @@ export function StoryExplorer({
   visitedChapterIds,
   discoveredEndings,
   endingChapters,
+  achievements,
 }: {
   storyId: string;
   storySlug: string;
@@ -50,12 +60,13 @@ export function StoryExplorer({
   visitedChapterIds: string[];
   discoveredEndings: string[];
   endingChapters: ChapterNode[];
+  achievements: AchievementCard[];
 }) {
-  const [tab, setTab] = useState<"tree" | "path" | "endings">("tree");
+  const [tab, setTab] = useState<"tree" | "path" | "endings" | "achievements">("tree");
   return (
     <div>
       <div className="flex items-center gap-2 border-b border-parchment/10">
-        {(["tree", "path", "endings"] as const).map((t) => (
+        {(["tree", "path", "endings", "achievements"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -65,7 +76,13 @@ export function StoryExplorer({
                 : "border-transparent text-parchment/60 hover:text-parchment"
             }`}
           >
-            {t === "tree" ? "Branch tree" : t === "path" ? "Table of contents" : "Endings"}
+            {t === "tree"
+              ? "Branch tree"
+              : t === "path"
+              ? "Table of contents"
+              : t === "endings"
+              ? "Endings"
+              : "Achievements"}
           </button>
         ))}
       </div>
@@ -98,8 +115,59 @@ export function StoryExplorer({
             discovered={discoveredEndings}
           />
         )}
+        {tab === "achievements" && <AchievementsWall achievements={achievements} />}
       </div>
     </div>
+  );
+}
+
+function AchievementsWall({ achievements }: { achievements: AchievementCard[] }) {
+  if (achievements.length === 0) {
+    return <p className="text-sm text-parchment/60">This story has no achievements yet.</p>;
+  }
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  return (
+    <>
+      <p className="mb-3 text-sm text-parchment/70">
+        {unlockedCount} of {achievements.length} unlocked
+      </p>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {achievements.map((a) => (
+          <li
+            key={a.id}
+            className={`rounded-lg border p-4 ${
+              a.unlocked
+                ? "border-accent/60 bg-accent/5"
+                : "border-white/10 bg-black/20 opacity-70"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span
+                className={`grid h-10 w-10 place-items-center rounded-full text-xl ${
+                  a.unlocked
+                    ? "bg-accent/20 text-accent ring-1 ring-accent/50"
+                    : "bg-white/[0.05] text-parchment/40"
+                }`}
+              >
+                {a.unlocked ? a.icon || "★" : "?"}
+              </span>
+              <div className="min-w-0">
+                <p
+                  className={`truncate font-serif text-lg ${
+                    a.unlocked ? "text-parchment" : "text-parchment/50"
+                  }`}
+                >
+                  {a.unlocked ? a.title : "Locked"}
+                </p>
+                {a.unlocked && a.description && (
+                  <p className="mt-0.5 text-xs text-parchment/60">{a.description}</p>
+                )}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 

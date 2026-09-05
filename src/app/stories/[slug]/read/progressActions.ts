@@ -2,6 +2,8 @@
 
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { evaluate, makeCtx } from "@/lib/engine/conditions";
+import type { ConditionNode } from "@/lib/types";
 
 async function requireUserId() {
   const supabase = createSupabaseServerClient();
@@ -94,6 +96,45 @@ export async function persistStepAction(input: {
     { onConflict: "user_id,story_id,slot" },
   );
   if (upErr) return { error: upErr.message };
+
+  // Achievement auto-unlock: evaluate all story achievements against the
+  // new state and record any freshly satisfied ones.
+  const [{ data: achievements }, { data: endings }, { data: unlocked }] = await Promise.all([
+    supabase
+      .from("achievements")
+      .select("id, unlock_condition")
+      .eq("story_id", parsed.data.storyId),
+    supabase
+      .from("discovered_endings")
+      .select("chapter_id")
+      .eq("user_id", userId)
+      .eq("story_id", parsed.data.storyId),
+    supabase
+      .from("unlocked_achievements")
+      .select("achievement_id")
+      .eq("user_id", userId)
+      .eq("story_id", parsed.data.storyId),
+  ]);
+  if (achievements && achievements.length > 0) {
+    const alreadyUnlocked = new Set((unlocked ?? []).map((r) => r.achievement_id as string));
+    const ctx = makeCtx({
+      visitedChapterIds: new Set(parsed.data.visitedChapterIds),
+      pickedChoiceIds: new Set(parsed.data.pickedChoiceIds),
+      discoveredEndings: new Set((endings ?? []).map((e) => e.chapter_id as string)),
+      flags: parsed.data.flags,
+    });
+    const toInsert = achievements
+      .filter((a) => !alreadyUnlocked.has(a.id))
+      .filter((a) => evaluate((a.unlock_condition as ConditionNode | null) ?? null, ctx))
+      .map((a) => ({
+        user_id: userId,
+        achievement_id: a.id,
+        story_id: parsed.data.storyId,
+      }));
+    if (toInsert.length > 0) {
+      await supabase.from("unlocked_achievements").insert(toInsert);
+    }
+  }
 
   return { ok: true };
 }

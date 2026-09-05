@@ -7,7 +7,7 @@ export default async function StoriesIndexPage() {
   const supabase = createSupabaseServerClient();
   const { data: stories } = await supabase
     .from("stories")
-    .select("id, slug, title, description, tags, status, content_rating")
+    .select("id, slug, title, description, tags, status, content_rating, cover_url")
     .neq("status", "draft")
     .order("published_at", { ascending: false })
     .limit(60);
@@ -26,7 +26,16 @@ export default async function StoriesIndexPage() {
         <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {stories.map((s) => (
             <li key={s.id} className="animate-fade-in">
-              <Link href={`/stories/${s.slug}`} className="card card-hover block h-full p-5">
+              <Link href={`/stories/${s.slug}`} className="card card-hover block h-full overflow-hidden">
+                {s.cover_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={s.cover_url}
+                    alt=""
+                    className="h-40 w-full object-cover"
+                  />
+                )}
+                <div className="p-5">
                 <div className="flex items-center justify-between">
                   <span className="chip capitalize">{s.status}</span>
                   <span className="chip capitalize">{s.content_rating}</span>
@@ -48,6 +57,7 @@ export default async function StoriesIndexPage() {
                     ))}
                   </p>
                 )}
+                </div>
               </Link>
             </li>
           ))}

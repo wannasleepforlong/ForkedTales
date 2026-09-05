@@ -126,6 +126,31 @@ export default async function StoryLandingPage({
     discoveredEndings = (endings ?? []).map((e) => e.chapter_id);
   }
 
+  // Achievements list for the explorer tab.
+  const [{ data: achievementRows }, { data: unlockedRows }] = await Promise.all([
+    supabase
+      .from("achievements")
+      .select("id, slug, title, description, icon")
+      .eq("story_id", story.id)
+      .order("slug", { ascending: true }),
+    user
+      ? supabase
+          .from("unlocked_achievements")
+          .select("achievement_id")
+          .eq("user_id", user.id)
+          .eq("story_id", story.id)
+      : Promise.resolve({ data: [] as { achievement_id: string }[] }),
+  ]);
+  const unlockedIds = new Set((unlockedRows ?? []).map((r) => r.achievement_id));
+  const achievements = (achievementRows ?? []).map((a) => ({
+    id: a.id,
+    slug: a.slug,
+    title: a.title,
+    description: a.description,
+    icon: a.icon,
+    unlocked: unlockedIds.has(a.id),
+  }));
+
   // Social: reactions + comments (readable by anyone who can read the story).
   const [{ data: reactionRows }, { data: commentRows }] = await Promise.all([
     supabase
@@ -260,6 +285,7 @@ export default async function StoryLandingPage({
             visitedChapterIds={visitedChapterIds}
             discoveredEndings={discoveredEndings}
             endingChapters={endingChapters}
+            achievements={achievements}
           />
         </section>
       )}

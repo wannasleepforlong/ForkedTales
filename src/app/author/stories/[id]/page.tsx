@@ -66,6 +66,9 @@ export default async function StoryEditPage({
           <Link href={`/author/stories/${story.id}/analytics`} className="btn-ghost">
             Analytics
           </Link>
+          <Link href={`/author/stories/${story.id}/achievements`} className="btn-ghost">
+            Achievements
+          </Link>
           <Link href={`/author/stories/${story.id}/tools`} className="btn-ghost">
             Import / Export
           </Link>
