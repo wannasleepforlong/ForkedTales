@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SlotsPanel, type SlotSummary } from "./SlotsPanel";
 import { StoryExplorer } from "./StoryExplorer";
+import { Reactions } from "./Reactions";
+import { Comments, type CommentRow } from "./Comments";
+import { REACTION_EMOJIS } from "./socialActions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +21,7 @@ export default async function StoryLandingPage({
   const { data: story } = await supabase
     .from("stories")
     .select(
-      "id, slug, title, description, tags, warnings, content_rating, status, start_chapter_id",
+      "id, slug, title, description, tags, warnings, content_rating, status, start_chapter_id, cover_url, author_id",
     )
     .eq("slug", params.slug)
     .maybeSingle();
@@ -123,6 +126,45 @@ export default async function StoryLandingPage({
     discoveredEndings = (endings ?? []).map((e) => e.chapter_id);
   }
 
+  // Social: reactions + comments (readable by anyone who can read the story).
+  const [{ data: reactionRows }, { data: commentRows }] = await Promise.all([
+    supabase
+      .from("story_reactions")
+      .select("user_id, emoji")
+      .eq("story_id", story.id),
+    supabase
+      .from("story_comments")
+      .select("id, user_id, body, created_at")
+      .eq("story_id", story.id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  const reactionCounts: Record<string, number> = {};
+  const myReactions: string[] = [];
+  for (const r of reactionRows ?? []) {
+    reactionCounts[r.emoji] = (reactionCounts[r.emoji] ?? 0) + 1;
+    if (user && r.user_id === user.id) myReactions.push(r.emoji);
+  }
+
+  // Resolve comment author handles in one round trip.
+  let comments: CommentRow[] = [];
+  if (commentRows && commentRows.length > 0) {
+    const uids = Array.from(new Set(commentRows.map((c) => c.user_id)));
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, handle")
+      .in("id", uids);
+    const handleByUid = new Map((profs ?? []).map((p) => [p.id, p.handle]));
+    comments = commentRows.map((c) => ({
+      id: c.id,
+      body: c.body,
+      createdAt: c.created_at,
+      authorId: c.user_id,
+      authorHandle: handleByUid.get(c.user_id) ?? null,
+    }));
+  }
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
       <Link href="/stories" className="text-sm text-parchment/60 hover:text-accent">
@@ -131,6 +173,12 @@ export default async function StoryLandingPage({
 
       <div className="mt-4 grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div>
+          {story.cover_url && (
+            <div className="mb-6 overflow-hidden rounded-2xl border border-white/10 shadow-glow">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={story.cover_url} alt="" className="w-full object-cover max-h-96" />
+            </div>
+          )}
           <p className="text-xs uppercase tracking-widest text-parchment/50">
             {story.status} · {story.content_rating}
           </p>
@@ -189,6 +237,16 @@ export default async function StoryLandingPage({
         )}
       </div>
 
+      <section className="mt-12">
+        <Reactions
+          storyId={story.id}
+          slug={story.slug}
+          counts={reactionCounts}
+          mine={myReactions}
+          signedIn={!!user}
+        />
+      </section>
+
       {user && story.start_chapter_id && (
         <section className="mt-12">
           <StoryExplorer
@@ -205,6 +263,16 @@ export default async function StoryLandingPage({
           />
         </section>
       )}
+
+      <section className="mt-16">
+        <Comments
+          storyId={story.id}
+          slug={story.slug}
+          currentUserId={user?.id ?? null}
+          isAuthor={!!user && user.id === story.author_id}
+          comments={comments}
+        />
+      </section>
     </main>
   );
 }
