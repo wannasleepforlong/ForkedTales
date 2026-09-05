@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { AssetUploader } from "@/components/AssetUploader";
 import { saveBlocksAction } from "../actions";
 
 type EditableBlock = {
@@ -189,11 +190,12 @@ function BlockFields({
     case "background":
       return (
         <div className="grid gap-2 sm:grid-cols-[3fr_1fr]">
-          <input
-            className={cn}
+          <AssetUploader
+            kind="background"
+            accept="image/*"
             placeholder="Image URL"
             value={String(block.data.image ?? "")}
-            onChange={(e) => onPatch("image", e.target.value)}
+            onChange={(v) => onPatch("image", v)}
           />
           <select
             className={cn}
@@ -208,11 +210,12 @@ function BlockFields({
     case "sprite":
       return (
         <div className="grid gap-2 sm:grid-cols-3">
-          <input
-            className={cn}
+          <AssetUploader
+            kind="sprite"
+            accept="image/*"
             placeholder="Image URL"
             value={String(block.data.image ?? "")}
-            onChange={(e) => onPatch("image", e.target.value)}
+            onChange={(v) => onPatch("image", v)}
           />
           <select
             className={cn}
@@ -235,22 +238,24 @@ function BlockFields({
       );
     case "sfx":
       return (
-        <input
-          className={cn}
+        <AssetUploader
+          kind="sfx"
+          accept="audio/*"
           placeholder="Audio URL"
           value={String(block.data.url ?? "")}
-          onChange={(e) => onPatch("url", e.target.value)}
+          onChange={(v) => onPatch("url", v)}
         />
       );
     case "bgm.play":
     case "bgm.change":
       return (
         <div className="grid gap-2 sm:grid-cols-[2fr_1fr_1fr]">
-          <input
-            className={cn}
+          <AssetUploader
+            kind="bgm"
+            accept="audio/*"
             placeholder="Track URL"
             value={String(block.data.track ?? "")}
-            onChange={(e) => onPatch("track", e.target.value)}
+            onChange={(v) => onPatch("track", v)}
           />
           <input
             className={cn}
