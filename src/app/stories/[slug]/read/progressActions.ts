@@ -62,6 +62,24 @@ export async function persistStepAction(input: {
   });
   if (insErr) return { error: insErr.message };
 
+  // Fire analytics events. RLS allows insert when user_id = auth.uid().
+  await supabase.from("events").insert([
+    {
+      user_id: userId,
+      story_id: parsed.data.storyId,
+      type: "chapter_entered",
+      payload: { chapterId: parsed.data.chapterId, slot: parsed.data.slot },
+    },
+    ...(parsed.data.choiceId
+      ? [{
+          user_id: userId,
+          story_id: parsed.data.storyId,
+          type: "choice_picked",
+          payload: { choiceId: parsed.data.choiceId, slot: parsed.data.slot },
+        }]
+      : []),
+  ]);
+
   const { error: upErr } = await supabase.from("reader_progress").upsert(
     {
       user_id: userId,
