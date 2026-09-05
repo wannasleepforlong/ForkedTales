@@ -3,9 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-export const REACTION_EMOJIS = ["👍", "❤️", "✨", "🔥", "😢", "🤯"] as const;
-type Emoji = typeof REACTION_EMOJIS[number];
+import { REACTION_EMOJIS } from "./reactionEmojis";
 
 const toggleSchema = z.object({
   storyId: z.string().uuid(),

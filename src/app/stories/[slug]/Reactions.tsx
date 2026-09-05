@@ -2,7 +2,8 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { REACTION_EMOJIS, toggleReactionAction } from "./socialActions";
+import { REACTION_EMOJIS } from "./reactionEmojis";
+import { toggleReactionAction } from "./socialActions";
 
 export function Reactions({
   storyId,

@@ -5,7 +5,6 @@ import { SlotsPanel, type SlotSummary } from "./SlotsPanel";
 import { StoryExplorer } from "./StoryExplorer";
 import { Reactions } from "./Reactions";
 import { Comments, type CommentRow } from "./Comments";
-import { REACTION_EMOJIS } from "./socialActions";
 
 export const dynamic = "force-dynamic";
 

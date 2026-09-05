@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "story": {
+    "slug": "the-last-lighthouse",
+    "title": "The Last Lighthouse",
+    "description": "A stranger knocks on your door in the middle of a storm. The beacon on the cliff has gone dark, and the sea is up to something. A short branching demo — three endings, one flag, five chapters.",
+    "coverUrl": null,
+    "contentRating": "everyone",
+    "status": "draft",
+    "tags": ["mystery", "coastal", "demo"],
+    "warnings": []
+  },
+  "flagDefs": [
+    {
+      "key": "trust_elena",
+      "kind": "int",
+      "defaultValue": 0,
+      "description": "How much the reader has decided to trust Elena.",
+      "enumValues": null
+    }
+  ],
+  "chapters": [
+    {
+      "localId": "c1",
+      "title": "The Storm",
+      "order": 0,
+      "isEnding": false,
+      "endingLabel": null,
+      "draft": false,
+      "unlockCondition": null,
+      "blocks": [
+        { "type": "narration", "data": { "text": "The wind pulled at the shutters as if it *knew* your name. You had not expected a visitor tonight — and yet, three quick knocks landed on the door, patient in a way the storm was not." } },
+        { "type": "narration", "data": { "text": "When you opened it, a woman stood dripping on the porch, one hand raised as though to knock again. Her coat was the wrong sort for the coast." } },
+        { "type": "dialogue", "data": { "speaker": "Elena", "text": "I'm sorry — the light. The **lighthouse** has gone dark. I saw a lamp in your window." } },
+        { "type": "narration", "data": { "text": "Behind her, the cliff was a black shoulder against a blacker sea. She was right. The beam that had swept the water every eight seconds for a hundred years was simply *not there*." } }
+      ]
+    },
+    {
+      "localId": "c2",
+      "title": "By the Fire",
+      "order": 1,
+      "isEnding": false,
+      "endingLabel": null,
+      "draft": false,
+      "unlockCondition": null,
+      "blocks": [
+        { "type": "narration", "data": { "text": "You wrapped her in the wool blanket your grandmother had left behind and set a kettle over the fire. She watched the flame with the concentration of someone who had not been warm in a long time." } },
+        { "type": "dialogue", "data": { "speaker": "Elena", "text": "The keeper is my uncle. He hasn't answered his radio since the wind picked up. I don't think he's — I don't think it's the storm." } },
+        { "type": "dialogue", "data": { "speaker": "You", "text": "What else would it be?" } },
+        { "type": "dialogue", "data": { "speaker": "Elena", "text": "Something *older* than the storm." } },
+        { "type": "narration", "data": { "text": "She said it the way a person says something they've been rehearsing in their head, hoping it will sound less strange out loud. It did not." } }
+      ]
+    },
+    {
+      "localId": "c3",
+      "title": "The Beacon Fails",
+      "order": 2,
+      "isEnding": false,
+      "endingLabel": null,
+      "draft": false,
+      "unlockCondition": null,
+      "blocks": [
+        { "type": "narration", "data": { "text": "By the time the kettle whistled, the wind had dropped — not gently, but all at once, the way a held breath ends. The absence rang louder than the storm." } },
+        { "type": "narration", "data": { "text": "Elena was already at the door, pulling her coat back on." } },
+        { "type": "dialogue", "data": { "speaker": "Elena", "text": "I have to go up there. Come with me. **Please**." } }
+      ]
+    },
+    {
+      "localId": "c_end_bad",
+      "title": "Ending — The Locked Door",
+      "order": 3,
+      "isEnding": true,
+      "endingLabel": "The Locked Door",
+      "draft": false,
+      "unlockCondition": null,
+      "blocks": [
+        { "type": "narration", "data": { "text": "You closed the door on her — gently, but firmly — and threw the bolt. The wind, which had been so loud, was suddenly very close to the wood, listening." } },
+        { "type": "narration", "data": { "text": "You did not sleep. In the morning the porch was empty except for a single wet footprint pointing back toward the cliff, and the lighthouse never turned again." } },
+        { "type": "narration", "data": { "text": "*You told yourself you did the sensible thing.*" } }
+      ]
+    },
+    {
+      "localId": "c_end_good",
+      "title": "Ending — The Beacon Rekindled",
+      "order": 4,
+      "isEnding": true,
+      "endingLabel": "The Beacon Rekindled",
+      "draft": false,
+      "unlockCondition": null,
+      "blocks": [
+        { "type": "narration", "data": { "text": "You climbed the cliff path together, Elena's hand steady in yours. At the top of the tower you found the keeper slumped over the lamp, breathing but not waking, and a small round mirror covered in something like salt." } },
+        { "type": "narration", "data": { "text": "Elena wiped the mirror clean. The great lamp caught, flared, and flung its beam out across the black water — and whatever had been *listening* out there in the dark unhooked itself from the coast and slipped away." } },
+        { "type": "narration", "data": { "text": "In the morning her uncle woke. He would not talk about what he had seen. But when Elena kissed you goodbye at the top of the cliff, the light behind her was **on**, and had been on all night." } }
+      ]
+    },
+    {
+      "localId": "c_end_lonely",
+      "title": "Ending — The Light Alone",
+      "order": 5,
+      "isEnding": true,
+      "endingLabel": "The Light Alone",
+      "draft": false,
+      "unlockCondition": null,
+      "blocks": [
+        { "type": "narration", "data": { "text": "You went alone. Elena stayed by the fire — you had not asked her to come, and something in her face said she would not have insisted." } },
+        { "type": "narration", "data": { "text": "You found the keeper. You lit the lamp. The beam swept the water again and whatever had been out there decided, for tonight, that one small light was enough to leave alone." } },
+        { "type": "narration", "data": { "text": "When you came down the cliff at dawn, the cabin door was open and the blanket was folded on the chair. Elena was gone. You never learned if she made it back to wherever she came from — only that the sea, from then on, treated you with the wary respect it saves for people who have *seen it think*." } }
+      ]
+    }
+  ],
+  "choices": [
+    {
+      "localId": "x1",
+      "fromLocalId": "c1",
+      "targetLocalId": "c2",
+      "label": "Let her in",
+      "order": 0,
+      "showCondition": null,
+      "effects": []
+    },
+    {
+      "localId": "x2",
+      "fromLocalId": "c1",
+      "targetLocalId": "c_end_bad",
+      "label": "Send her back into the storm",
+      "order": 1,
+      "showCondition": null,
+      "effects": []
+    },
+    {
+      "localId": "x3",
+      "fromLocalId": "c2",
+      "targetLocalId": "c3",
+      "label": "Believe her",
+      "order": 0,
+      "showCondition": null,
+      "effects": [
+        { "op": "incFlag", "key": "trust_elena", "by": 1 }
+      ]
+    },
+    {
+      "localId": "x4",
+      "fromLocalId": "c2",
+      "targetLocalId": "c3",
+      "label": "Nod along, silent",
+      "order": 1,
+      "showCondition": null,
+      "effects": []
+    },
+    {
+      "localId": "x5",
+      "fromLocalId": "c3",
+      "targetLocalId": "c_end_good",
+      "label": "Climb the cliff with Elena",
+      "order": 0,
+      "showCondition": {
+        "op": "flag",
+        "key": "trust_elena",
+        "cmp": ">=",
+        "value": 1
+      },
+      "effects": []
+    },
+    {
+      "localId": "x6",
+      "fromLocalId": "c3",
+      "targetLocalId": "c_end_lonely",
+      "label": "Climb the cliff alone",
+      "order": 1,
+      "showCondition": null,
+      "effects": []
+    }
+  ],
+  "startLocalId": "c1"
+}

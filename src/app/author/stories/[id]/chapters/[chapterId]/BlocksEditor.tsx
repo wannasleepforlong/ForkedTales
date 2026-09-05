@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { AssetUploader } from "@/components/AssetUploader";
+import { RichTextArea } from "@/components/RichTextArea";
 import { saveBlocksAction } from "../actions";
 
 type EditableBlock = {
@@ -17,12 +18,9 @@ const BLOCK_LIBRARY: {
   { type: "narration", label: "Narration", make: () => ({ type: "narration", data: { text: "" } }) },
   { type: "dialogue", label: "Dialogue", make: () => ({ type: "dialogue", data: { speaker: "", text: "" } }) },
   { type: "background", label: "Background", make: () => ({ type: "background", data: { image: "", transition: "fade" } }) },
-  { type: "sprite", label: "Sprite", make: () => ({ type: "sprite", data: { image: "", side: "center", action: "show" } }) },
-  { type: "sfx", label: "SFX", make: () => ({ type: "sfx", data: { url: "" } }) },
   { type: "bgm.play", label: "BGM — play", make: () => ({ type: "bgm.play", data: { track: "", loop: true, fadeMs: 800, volume: 0.7 } }) },
   { type: "bgm.change", label: "BGM — change", make: () => ({ type: "bgm.change", data: { track: "", fadeMs: 800, volume: 0.7 } }) },
   { type: "bgm.stop", label: "BGM — stop", make: () => ({ type: "bgm.stop", data: { fadeMs: 800 } }) },
-  { type: "wait", label: "Wait", make: () => ({ type: "wait", data: { ms: 800 } }) },
 ];
 
 export function BlocksEditor({
@@ -43,11 +41,9 @@ export function BlocksEditor({
     if (!spec) return;
     setBlocks((prev) => [...prev, spec.make()]);
   }
-
   function remove(i: number) {
     setBlocks((prev) => prev.filter((_, idx) => idx !== i));
   }
-
   function move(i: number, dir: -1 | 1) {
     setBlocks((prev) => {
       const j = i + dir;
@@ -57,7 +53,6 @@ export function BlocksEditor({
       return next;
     });
   }
-
   function patch(i: number, key: string, value: unknown) {
     setBlocks((prev) =>
       prev.map((b, idx) => (idx === i ? { ...b, data: { ...b.data, [key]: value } } : b)),
@@ -111,7 +106,9 @@ export function BlocksEditor({
                 </button>
               </div>
             </div>
-            <BlockFields block={b} onPatch={(k, v) => patch(i, k, v)} />
+            <div className="mt-2">
+              <BlockFields block={b} onPatch={(k, v) => patch(i, k, v)} />
+            </div>
           </li>
         ))}
       </ul>
@@ -138,7 +135,7 @@ export function BlocksEditor({
           type="button"
           disabled={pending}
           onClick={save}
-          className="rounded bg-accent px-4 py-2 font-medium text-ink hover:opacity-90 disabled:opacity-60"
+          className="btn-primary"
         >
           {pending ? "Saving…" : "Save content"}
         </button>
@@ -161,11 +158,10 @@ function BlockFields({
   switch (block.type) {
     case "narration":
       return (
-        <textarea
-          rows={3}
-          className={cn}
+        <RichTextArea
           value={String(block.data.text ?? "")}
-          onChange={(e) => onPatch("text", e.target.value)}
+          onChange={(v) => onPatch("text", v)}
+          rows={3}
           placeholder="The wind pulled at the shutters…"
         />
       );
@@ -178,12 +174,11 @@ function BlockFields({
             value={String(block.data.speaker ?? "")}
             onChange={(e) => onPatch("speaker", e.target.value)}
           />
-          <textarea
-            rows={2}
-            className={cn}
-            placeholder="Line…"
+          <RichTextArea
             value={String(block.data.text ?? "")}
-            onChange={(e) => onPatch("text", e.target.value)}
+            onChange={(v) => onPatch("text", v)}
+            rows={2}
+            placeholder="Line…"
           />
         </div>
       );
@@ -206,45 +201,6 @@ function BlockFields({
             <option value="fade">fade</option>
           </select>
         </div>
-      );
-    case "sprite":
-      return (
-        <div className="grid gap-2 sm:grid-cols-3">
-          <AssetUploader
-            kind="sprite"
-            accept="image/*"
-            placeholder="Image URL"
-            value={String(block.data.image ?? "")}
-            onChange={(v) => onPatch("image", v)}
-          />
-          <select
-            className={cn}
-            value={String(block.data.side ?? "center")}
-            onChange={(e) => onPatch("side", e.target.value)}
-          >
-            <option value="left">left</option>
-            <option value="center">center</option>
-            <option value="right">right</option>
-          </select>
-          <select
-            className={cn}
-            value={String(block.data.action ?? "show")}
-            onChange={(e) => onPatch("action", e.target.value)}
-          >
-            <option value="show">show</option>
-            <option value="hide">hide</option>
-          </select>
-        </div>
-      );
-    case "sfx":
-      return (
-        <AssetUploader
-          kind="sfx"
-          accept="audio/*"
-          placeholder="Audio URL"
-          value={String(block.data.url ?? "")}
-          onChange={(v) => onPatch("url", v)}
-        />
       );
     case "bgm.play":
     case "bgm.change":
@@ -286,17 +242,6 @@ function BlockFields({
           placeholder="Fade (ms)"
           value={Number(block.data.fadeMs ?? 800)}
           onChange={(e) => onPatch("fadeMs", Number(e.target.value))}
-        />
-      );
-    case "wait":
-      return (
-        <input
-          className={cn}
-          type="number"
-          min={0}
-          placeholder="ms"
-          value={Number(block.data.ms ?? 800)}
-          onChange={(e) => onPatch("ms", Number(e.target.value))}
         />
       );
     default:

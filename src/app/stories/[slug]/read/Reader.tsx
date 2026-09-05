@@ -9,6 +9,7 @@ import type { ConditionNode, Effect } from "@/lib/types";
 import { persistStepAction, recordEndingAction } from "./progressActions";
 import { Typewriter } from "./Typewriter";
 import { ReaderSettings } from "./ReaderSettings";
+import { renderRich } from "@/lib/richtext";
 
 type Block = { type: string; data: Record<string, unknown> };
 type Chapter = {
@@ -63,7 +64,6 @@ export function Reader({
   const [cursor, setCursor] = useState(0);
   const [visibleLines, setVisibleLines] = useState<Block[]>([]);
   const [bg, setBg] = useState<string | null>(null);
-  const [sprites, setSprites] = useState<Record<string, string>>({});
   const [flags, setFlags] = useState<Record<string, unknown>>(
     initialProgress?.flags ?? {},
   );
@@ -180,44 +180,8 @@ export function Reader({
         case "background":
           setBg(String(b.data.image ?? "") || null);
           break;
-        case "sprite": {
-          const side = String(b.data.side ?? "center");
-          const image = String(b.data.image ?? "");
-          const action = String(b.data.action ?? "show");
-          setSprites((prev) => {
-            const next = { ...prev };
-            if (action === "hide" || !image) delete next[side];
-            else next[side] = image;
-            return next;
-          });
-          break;
-        }
-        case "sfx": {
-          const url = String(b.data.url ?? "");
-          if (url) {
-            const a = new Audio(url);
-            a.volume = 0.9;
-            a.play().catch(() => {});
-          }
-          break;
-        }
-        case "wait":
-          await new Promise((r) => setTimeout(r, numberOr(b.data.ms, 400)));
-          break;
-        case "flagSet": {
-          const key = String(b.data.key ?? "");
-          if (key) {
-            if ("inc" in b.data) {
-              const inc = Number(b.data.inc);
-              const cur = Number(nextFlags[key] ?? 0);
-              nextFlags = { ...nextFlags, [key]: (Number.isFinite(cur) ? cur : 0) + (Number.isFinite(inc) ? inc : 0) };
-            } else {
-              nextFlags = { ...nextFlags, [key]: b.data.value };
-            }
-            setFlags(nextFlags);
-          }
-          break;
-        }
+        // sprite / sfx / wait / flagSet were dropped from the block
+        // library — silently ignore any leftover data from older stories.
       }
       i++;
     }
@@ -288,7 +252,6 @@ export function Reader({
     setChapterId(edge.targetChapterId);
     setCursor(0);
     setVisibleLines([]);
-    setSprites({});
     void persistEnter(edge.targetChapterId, edge.id, nextFlags);
   }
 
@@ -324,22 +287,6 @@ export function Reader({
       style={ambient}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-ink/40 via-ink/10 to-ink/90" />
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-40 flex items-end justify-around">
-        {(["left", "center", "right"] as const).map((side) => {
-          const image = sprites[side];
-          if (!image) return <div key={side} className="w-1/4" />;
-          return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={side}
-              src={image}
-              alt=""
-              className="max-h-[60vh] object-contain drop-shadow-2xl animate-fade-in"
-            />
-          );
-        })}
-      </div>
 
       <div className="relative mx-auto flex max-w-3xl flex-col gap-6 px-6 pb-20 pt-16">
         <div className="flex items-center justify-between text-xs uppercase tracking-widest text-parchment/60">
@@ -444,10 +391,13 @@ function LineView({
   onDone?: () => void;
 }) {
   const text = String(block.data.text ?? "");
+  // Rich-text output is fully rendered up front, but the typewriter still
+  // controls how much is revealed via an animated CSS clip.
+  const rich = renderRich(text);
   const inner = typewriter ? (
-    <Typewriter text={text} cps={cps} enabled onDone={onDone} />
+    <Typewriter text={text} cps={cps} enabled onDone={onDone} rich={rich} />
   ) : (
-    <>{text}</>
+    rich
   );
 
   useDoneWhenStatic(typewriter, onDone);
