@@ -13,10 +13,14 @@ export default async function AuthorDashboardPage() {
     .order("updated_at", { ascending: false });
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-12">
-      <div className="flex items-center justify-between">
-        <h1 className="font-serif text-4xl text-accent">Your stories</h1>
+    <main className="mx-auto max-w-5xl px-6 py-14">
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="label">Your workshop</p>
+          <h1 className="mt-2 font-serif text-5xl text-parchment">Stories</h1>
+        </div>
       </div>
+      <div className="divider mt-8" />
 
       <section className="mt-8">
         <NewStoryForm />
@@ -24,34 +28,27 @@ export default async function AuthorDashboardPage() {
 
       <section className="mt-12">
         {stories && stories.length > 0 ? (
-          <ul className="divide-y divide-parchment/10 rounded border border-parchment/10">
+          <ul className="grid gap-3">
             {stories.map((s) => (
-              <li key={s.id} className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <Link
-                    href={`/author/stories/${s.id}`}
-                    className="font-medium hover:text-accent"
-                  >
-                    {s.title}
-                  </Link>
-                  <p className="text-xs text-parchment/50">
-                    /{s.slug} · {s.status} · updated{" "}
-                    {new Date(s.updated_at).toLocaleString()}
-                  </p>
-                </div>
+              <li key={s.id}>
                 <Link
                   href={`/author/stories/${s.id}`}
-                  className="text-sm text-parchment/70 hover:text-accent"
+                  className="card card-hover flex items-center justify-between px-5 py-4"
                 >
-                  Edit →
+                  <div>
+                    <p className="font-serif text-xl text-parchment">{s.title}</p>
+                    <p className="mt-1 text-xs text-parchment/50">
+                      /{s.slug} · <span className="capitalize">{s.status}</span> ·
+                      updated {new Date(s.updated_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <span className="text-sm text-accent">Open →</span>
                 </Link>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-parchment/60">
-            No stories yet. Start one above.
-          </p>
+          <p className="text-parchment/60">No stories yet. Start one above.</p>
         )}
       </section>
     </main>

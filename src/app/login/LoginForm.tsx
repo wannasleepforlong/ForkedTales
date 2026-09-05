@@ -23,51 +23,41 @@ export function LoginForm({
     startTransition(async () => {
       const action = mode === "signin" ? signInAction : signUpAction;
       const result = await action(formData);
-      if (result?.error) {
-        setMessage(result.error);
-        return;
-      }
-      if (result?.notice) {
-        setMessage(result.notice);
-        return;
-      }
+      if (result?.error) return setMessage(result.error);
+      if (result?.notice) return setMessage(result.notice);
       router.push(next || "/");
       router.refresh();
     });
   }
 
   return (
-    <form action={submit} className="mt-8 space-y-4">
+    <form action={submit} className="mt-6 space-y-4">
       {mode === "signup" && (
         <label className="block text-sm">
-          <span className="text-parchment/80">Handle</span>
+          <span className="label">Handle</span>
           <input
             name="handle"
             required
             minLength={3}
             maxLength={24}
             pattern="[a-zA-Z0-9_]+"
-            className="mt-1 w-full rounded border border-parchment/30 bg-transparent px-3 py-2"
+            className="mt-1 w-full"
+            placeholder="mira_ink"
           />
         </label>
       )}
       <label className="block text-sm">
-        <span className="text-parchment/80">Email</span>
-        <input
-          type="email"
-          name="email"
-          required
-          className="mt-1 w-full rounded border border-parchment/30 bg-transparent px-3 py-2"
-        />
+        <span className="label">Email</span>
+        <input type="email" name="email" required className="mt-1 w-full" />
       </label>
       <label className="block text-sm">
-        <span className="text-parchment/80">Password</span>
+        <span className="label">Password</span>
         <input
           type="password"
           name="password"
           required
           minLength={6}
-          className="mt-1 w-full rounded border border-parchment/30 bg-transparent px-3 py-2"
+          className="mt-1 w-full"
         />
       </label>
 
@@ -77,21 +67,18 @@ export function LoginForm({
         </p>
       )}
 
-      <button
-        disabled={pending}
-        className="w-full rounded bg-accent px-4 py-2 font-medium text-ink hover:opacity-90 disabled:opacity-60"
-      >
+      <button disabled={pending} className="btn-primary w-full">
         {pending ? "…" : mode === "signin" ? "Sign in" : "Create account"}
       </button>
 
       <button
         type="button"
         onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
-        className="w-full text-sm text-parchment/70 hover:text-parchment"
+        className="w-full text-center text-sm text-parchment/60 transition hover:text-parchment"
       >
         {mode === "signin"
-          ? "No account yet? Create one."
-          : "Already registered? Sign in."}
+          ? "No account yet? Create one →"
+          : "Already registered? Sign in →"}
       </button>
     </form>
   );

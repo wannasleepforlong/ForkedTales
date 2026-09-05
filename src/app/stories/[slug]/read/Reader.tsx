@@ -26,16 +26,6 @@ type ChoiceEdge = {
 
 type Story = { id: string; slug: string; title: string; startChapterId: string };
 
-/**
- * Branching reader (phase 2).
- * - Loads or resumes a save slot from reader_progress.
- * - Steps through blocks in a chapter, applying side effects inline.
- * - At end of chapter, filters choices by their showCondition AND by
- *   whether the target chapter's unlockCondition is currently satisfied.
- * - On pick: applies effects, records the step (append-only reader_path
- *   + reader_progress upsert), jumps to the target.
- * - On entering an ending chapter, records into discovered_endings.
- */
 export function Reader({
   story,
   slot,
@@ -96,13 +86,10 @@ export function Reader({
     };
   }, []);
 
-  // --- persist a step (chapter enter + optional choice pick)
   const persistEnter = useCallback(
     async (targetChapterId: string, choiceId: string | null, nextFlags: Record<string, unknown>) => {
       const nextVisited = Array.from(new Set([...visited, targetChapterId]));
-      const nextPicked = choiceId
-        ? Array.from(new Set([...picked, choiceId]))
-        : picked;
+      const nextPicked = choiceId ? Array.from(new Set([...picked, choiceId])) : picked;
       setVisited(nextVisited);
       setPicked(nextPicked);
 
@@ -117,7 +104,7 @@ export function Reader({
           pickedChoiceIds: nextPicked,
         });
       } catch {
-        // Fail-soft: the reader keeps working even if network is flaky.
+        /* fail-soft */
       }
 
       const target = chapterMap[targetChapterId];
@@ -135,7 +122,6 @@ export function Reader({
     [chapterMap, picked, slot, story.id, visited],
   );
 
-  // Record the starting chapter once the reader begins.
   useEffect(() => {
     if (!started) return;
     void persistEnter(chapterId, null, flags);
@@ -232,7 +218,6 @@ export function Reader({
 
   const atChapterEnd = chapter && cursor >= chapter.blocks.length;
 
-  // Compute available choices at the end of the chapter.
   const availableChoices = useMemo(() => {
     if (!chapter || !atChapterEnd) return [];
     const edges = choicesByChapter[chapter.id] ?? [];
@@ -256,9 +241,6 @@ export function Reader({
   function pickChoice(edge: ChoiceEdge) {
     const nextFlags = applyEffects(edge.effects, flags);
     setFlags(nextFlags);
-
-    // unlockEnding effects: mark ending discovered even if target isn't
-    // the ending itself.
     for (const eff of edge.effects) {
       if (eff.op === "unlockEnding") {
         setDiscoveredEndings((prev) =>
@@ -267,15 +249,11 @@ export function Reader({
         void recordEndingAction({ storyId: story.id, chapterId: eff.chapterId });
       }
     }
-
-    if (!edge.targetChapterId) return; // dead end
-
+    if (!edge.targetChapterId) return;
     setChapterId(edge.targetChapterId);
     setCursor(0);
     setVisibleLines([]);
     setSprites({});
-    // Background and BGM persist unless the next chapter changes them.
-
     void persistEnter(edge.targetChapterId, edge.id, nextFlags);
   }
 
@@ -289,19 +267,16 @@ export function Reader({
 
   if (!started) {
     return (
-      <main className="mx-auto max-w-2xl px-6 py-24 text-center">
-        <p className="text-xs uppercase tracking-widest text-parchment/60">
+      <main className="mx-auto max-w-2xl px-6 py-24 text-center animate-fade-in">
+        <p className="label">
           Slot {slot + 1}
           {initialProgress ? " · Continuing" : " · Fresh start"}
         </p>
-        <h1 className="mt-2 font-serif text-4xl text-accent">{story.title}</h1>
+        <h1 className="mt-3 font-serif text-5xl text-accent">{story.title}</h1>
         {chapter && (
-          <p className="mt-2 text-parchment/70">Currently at: {chapter.title}</p>
+          <p className="mt-3 italic text-parchment/70">Currently at &ldquo;{chapter.title}&rdquo;</p>
         )}
-        <button
-          onClick={() => setStarted(true)}
-          className="mt-8 rounded bg-accent px-6 py-2 font-medium text-ink hover:opacity-90"
-        >
+        <button onClick={() => setStarted(true)} className="btn-primary mt-10">
           {initialProgress ? "Resume" : "Begin"}
         </button>
       </main>
@@ -309,8 +284,11 @@ export function Reader({
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden" style={ambient}>
-      <div className="absolute inset-0 bg-gradient-to-b from-ink/40 via-ink/10 to-ink/80" />
+    <div
+      className="relative min-h-[calc(100vh-4rem)] overflow-hidden transition-[background] duration-700"
+      style={ambient}
+    >
+      <div className="absolute inset-0 bg-gradient-to-b from-ink/40 via-ink/10 to-ink/90" />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-40 flex items-end justify-around">
         {(["left", "center", "right"] as const).map((side) => {
@@ -322,7 +300,7 @@ export function Reader({
               key={side}
               src={image}
               alt=""
-              className="max-h-[60vh] object-contain drop-shadow-2xl"
+              className="max-h-[60vh] object-contain drop-shadow-2xl animate-fade-in"
             />
           );
         })}
@@ -334,21 +312,20 @@ export function Reader({
             {story.title} · {chapter?.title}
             {chapter?.isEnding && chapter.endingLabel && ` · Ending: ${chapter.endingLabel}`}
           </span>
-          <Link
-            href={`/stories/${story.slug}?slot=${slot}`}
-            className="hover:text-accent"
-          >
+          <Link href={`/stories/${story.slug}?slot=${slot}`} className="hover:text-accent">
             Saves & tree ↗
           </Link>
         </div>
 
-        <div className="min-h-[10rem] rounded-lg border border-parchment/10 bg-ink/80 p-6 backdrop-blur">
+        <div className="glass min-h-[10rem] rounded-2xl p-6 shadow-glow">
           {visibleLines.length === 0 ? (
             <p className="text-parchment/60">…</p>
           ) : (
             <div className="prose-vn space-y-3">
               {visibleLines.map((b, i) => (
-                <LineView key={i} block={b} />
+                <div key={i} className="animate-fade-in">
+                  <LineView block={b} />
+                </div>
               ))}
             </div>
           )}
@@ -359,21 +336,23 @@ export function Reader({
             <button
               onClick={() => void step()}
               disabled={busy}
-              className="self-end rounded bg-accent px-5 py-2 font-medium text-ink hover:opacity-90 disabled:opacity-60"
+              className="btn-primary self-end"
             >
               Continue
             </button>
           ) : availableChoices.length > 0 ? (
-            <div className="grid gap-2">
-              <p className="text-xs uppercase tracking-widest text-parchment/60">
-                What do you do?
-              </p>
+            <div className="grid gap-2 animate-fade-in">
+              <p className="label">What do you do?</p>
               {availableChoices.map((edge) => (
                 <button
                   key={edge.id}
                   onClick={() => pickChoice(edge)}
-                  className="rounded-lg border border-parchment/20 bg-ink/70 px-4 py-3 text-left transition hover:border-accent hover:bg-accent/10"
+                  className="group relative rounded-xl border border-white/15 bg-ink/70 px-5 py-4 text-left transition-all
+                             hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 hover:shadow-glow"
                 >
+                  <span className="mr-2 text-accent opacity-60 transition group-hover:opacity-100">
+                    ➤
+                  </span>
                   {edge.label}
                 </button>
               ))}
@@ -381,7 +360,7 @@ export function Reader({
           ) : chapter?.isEnding ? (
             <Link
               href={`/stories/${story.slug}?slot=${slot}`}
-              className="self-end rounded border border-accent px-5 py-2 text-accent hover:bg-accent hover:text-ink"
+              className="btn-ghost self-end"
             >
               The end · back to story
             </Link>
@@ -406,14 +385,12 @@ function LineView({ block }: { block: Block }) {
     const text = String(block.data.text ?? "");
     return (
       <p>
-        {speaker && (
-          <span className="mr-2 font-serif text-accent">{speaker}:</span>
-        )}
+        {speaker && <span className="mr-2 font-serif text-accent">{speaker}:</span>}
         <span>{text}</span>
       </p>
     );
   }
-  return <p className="italic text-parchment/90">{String(block.data.text ?? "")}</p>;
+  return <p className="italic text-parchment/85">{String(block.data.text ?? "")}</p>;
 }
 
 function numberOr(v: unknown, fallback: number): number {

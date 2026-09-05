@@ -22,30 +22,22 @@ export function NewStoryForm() {
   }
 
   return (
-    <form
-      action={submit}
-      className="flex flex-col gap-3 rounded border border-parchment/10 p-4 sm:flex-row sm:items-end"
-    >
+    <form action={submit} className="card flex flex-col gap-3 p-5 sm:flex-row sm:items-end">
       <label className="flex-1 text-sm">
-        <span className="text-parchment/80">Title</span>
+        <span className="label">Title</span>
         <input
           name="title"
           required
           minLength={2}
           maxLength={120}
           placeholder="The Last Lighthouse"
-          className="mt-1 w-full rounded border border-parchment/30 bg-transparent px-3 py-2"
+          className="mt-1 w-full"
         />
       </label>
-      <button
-        disabled={pending}
-        className="rounded bg-accent px-4 py-2 font-medium text-ink hover:opacity-90 disabled:opacity-60"
-      >
+      <button disabled={pending} className="btn-primary">
         {pending ? "…" : "New story"}
       </button>
-      {error && (
-        <p className="w-full text-sm text-red-300">{error}</p>
-      )}
+      {error && <p className="w-full text-sm text-red-300">{error}</p>}
     </form>
   );
 }

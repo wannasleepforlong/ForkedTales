@@ -4,6 +4,8 @@
 
 :root {
   color-scheme: dark;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 
 html,
@@ -13,8 +15,112 @@ body {
 
 body {
   @apply bg-ink text-parchment font-sans antialiased;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(224, 176, 74, 0.06), transparent 55%),
+    radial-gradient(ellipse at 80% 100%, rgba(121, 184, 166, 0.05), transparent 55%),
+    linear-gradient(180deg, #0b0812 0%, #0b0812 100%);
+  background-attachment: fixed;
 }
 
-.prose-vn {
-  @apply font-serif text-lg leading-relaxed;
+::selection {
+  background: rgba(224, 176, 74, 0.35);
+  color: #f4ecd8;
+}
+
+/* Consistent focus ring across the app. */
+*:focus-visible {
+  outline: 2px solid rgba(224, 176, 74, 0.7);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Base form control styling. */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+input[type="search"],
+select,
+textarea {
+  @apply bg-white/[0.03] border border-white/10 rounded-md px-3 py-2 text-parchment
+         placeholder:text-parchment/40 shadow-inset transition;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="url"]:focus,
+input[type="search"]:focus,
+select:focus,
+textarea:focus {
+  @apply border-accent/60 bg-white/[0.06];
+}
+
+input[type="checkbox"] {
+  accent-color: #e0b04a;
+}
+
+textarea {
+  min-height: 6rem;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm
+           font-medium transition-all duration-200 disabled:opacity-60
+           disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-ink hover:bg-accent-hi shadow-glow;
+  }
+  .btn-ghost {
+    @apply btn border border-white/15 text-parchment hover:border-accent
+           hover:text-accent hover:bg-accent/5;
+  }
+  .btn-danger {
+    @apply btn border border-red-400/40 text-red-300 hover:bg-red-500/10;
+  }
+
+  .card {
+    @apply relative rounded-xl border border-white/10 bg-white/[0.02]
+           backdrop-blur-sm transition-all duration-200;
+  }
+  .card-hover {
+    @apply hover:border-accent/50 hover:bg-white/[0.04] hover:-translate-y-0.5
+           hover:shadow-glow;
+  }
+
+  .prose-vn {
+    @apply font-serif text-lg leading-relaxed text-parchment;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full border border-white/10
+           bg-white/[0.04] px-2 py-0.5 text-xs text-parchment/70;
+  }
+
+  .label {
+    @apply text-xs uppercase tracking-[0.14em] text-parchment/60;
+  }
+
+  .divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent;
+  }
+
+  .hairline {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.08) 20%,
+      rgba(255, 255, 255, 0.08) 80%,
+      transparent
+    );
+    height: 1px;
+  }
+
+  .glass {
+    @apply bg-ink/70 border border-white/10 backdrop-blur-md;
+  }
 }
