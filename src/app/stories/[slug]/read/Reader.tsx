@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createBgmController, type BgmController } from "@/lib/reader/bgm";
 import { evaluate, applyEffects, makeCtx } from "@/lib/engine/conditions";
+import { loadPrefs, savePrefs, DEFAULT_PREFS, type ReaderPrefs } from "@/lib/reader/prefs";
 import type { ConditionNode, Effect } from "@/lib/types";
 import { persistStepAction, recordEndingAction } from "./progressActions";
+import { Typewriter } from "./Typewriter";
+import { ReaderSettings } from "./ReaderSettings";
 
 type Block = { type: string; data: Record<string, unknown> };
 type Chapter = {
@@ -74,7 +77,19 @@ export function Reader({
     initialDiscoveredEndings,
   );
   const [busy, setBusy] = useState(false);
+  const [prefs, setPrefs] = useState<ReaderPrefs>(DEFAULT_PREFS);
+  const [lastLineDone, setLastLineDone] = useState(true);
   const bgmRef = useRef<BgmController | null>(null);
+  const autoAdvanceRef = useRef<number | null>(null);
+
+  // Load persisted prefs client-side once.
+  useEffect(() => {
+    setPrefs(loadPrefs());
+  }, []);
+  function updatePrefs(next: ReaderPrefs) {
+    setPrefs(next);
+    savePrefs(next);
+  }
 
   const chapter = chapterMap[chapterId];
 
@@ -140,6 +155,7 @@ export function Reader({
       const b = chapter.blocks[i];
       if (b.type === "narration" || b.type === "dialogue") {
         setVisibleLines((prev) => [...prev, b]);
+        setLastLineDone(false);
         i++;
         stopped = true;
         break;
@@ -215,6 +231,25 @@ export function Reader({
     void step();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [started, chapterId]);
+
+  // Auto-advance ticks a call to step() once the current line finishes,
+  // waiting the user-configured delay.
+  useEffect(() => {
+    if (!started) return;
+    if (!prefs.autoAdvance) return;
+    if (!lastLineDone) return;
+    if (busy) return;
+    if (!chapter || cursor >= chapter.blocks.length) return;
+    autoAdvanceRef.current = window.setTimeout(() => {
+      void step();
+    }, prefs.autoAdvanceMs);
+    return () => {
+      if (autoAdvanceRef.current !== null) {
+        window.clearTimeout(autoAdvanceRef.current);
+        autoAdvanceRef.current = null;
+      }
+    };
+  }, [started, prefs.autoAdvance, prefs.autoAdvanceMs, lastLineDone, busy, chapter, cursor, step]);
 
   const atChapterEnd = chapter && cursor >= chapter.blocks.length;
 
@@ -312,21 +347,39 @@ export function Reader({
             {story.title} · {chapter?.title}
             {chapter?.isEnding && chapter.endingLabel && ` · Ending: ${chapter.endingLabel}`}
           </span>
-          <Link href={`/stories/${story.slug}?slot=${slot}`} className="hover:text-accent">
-            Saves & tree ↗
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href={`/stories/${story.slug}?slot=${slot}`} className="hover:text-accent">
+              Saves & tree ↗
+            </Link>
+            <ReaderSettings prefs={prefs} onChange={updatePrefs} />
+          </div>
         </div>
 
-        <div className="glass min-h-[10rem] rounded-2xl p-6 shadow-glow">
+        <div
+          className="glass min-h-[10rem] rounded-2xl p-6 shadow-glow"
+          style={{ fontSize: `${prefs.textScale}rem` }}
+          onClick={() => {
+            // Click the text pane to skip the typewriter, then to advance.
+            if (!lastLineDone) setLastLineDone(true);
+          }}
+        >
           {visibleLines.length === 0 ? (
             <p className="text-parchment/60">…</p>
           ) : (
             <div className="prose-vn space-y-3">
-              {visibleLines.map((b, i) => (
-                <div key={i} className="animate-fade-in">
-                  <LineView block={b} />
-                </div>
-              ))}
+              {visibleLines.map((b, i) => {
+                const isLast = i === visibleLines.length - 1;
+                return (
+                  <div key={i} className="animate-fade-in">
+                    <LineView
+                      block={b}
+                      typewriter={isLast && !lastLineDone && prefs.typewriter}
+                      cps={prefs.charsPerSecond}
+                      onDone={isLast ? () => setLastLineDone(true) : undefined}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -379,18 +432,44 @@ export function Reader({
   );
 }
 
-function LineView({ block }: { block: Block }) {
+function LineView({
+  block,
+  typewriter,
+  cps,
+  onDone,
+}: {
+  block: Block;
+  typewriter: boolean;
+  cps: number;
+  onDone?: () => void;
+}) {
+  const text = String(block.data.text ?? "");
+  const inner = typewriter ? (
+    <Typewriter text={text} cps={cps} enabled onDone={onDone} />
+  ) : (
+    <>{text}</>
+  );
+
+  useDoneWhenStatic(typewriter, onDone);
+
   if (block.type === "dialogue") {
     const speaker = String(block.data.speaker ?? "");
-    const text = String(block.data.text ?? "");
     return (
       <p>
         {speaker && <span className="mr-2 font-serif text-accent">{speaker}:</span>}
-        <span>{text}</span>
+        <span>{inner}</span>
       </p>
     );
   }
-  return <p className="italic text-parchment/85">{String(block.data.text ?? "")}</p>;
+  return <p className="italic text-parchment/85">{inner}</p>;
+}
+
+// If the typewriter is off, fire onDone once so auto-advance still works.
+function useDoneWhenStatic(typewriter: boolean, onDone?: () => void) {
+  useEffect(() => {
+    if (!typewriter) onDone?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typewriter]);
 }
 
 function numberOr(v: unknown, fallback: number): number {
