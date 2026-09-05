@@ -58,6 +58,7 @@ const updateStorySchema = z.object({
   contentRating: z.enum(["everyone", "teen", "mature"]),
   status: z.enum(["draft", "ongoing", "complete"]),
   startChapterId: z.string().uuid().optional().nullable(),
+  coverUrl: z.string().url().max(1000).optional().nullable(),
 });
 
 export async function updateStoryAction(
@@ -67,6 +68,7 @@ export async function updateStoryAction(
   const parsed = updateStorySchema.safeParse({
     ...raw,
     startChapterId: raw.startChapterId || null,
+    coverUrl: raw.coverUrl ? String(raw.coverUrl) : null,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
@@ -87,6 +89,7 @@ export async function updateStoryAction(
       content_rating: parsed.data.contentRating,
       status: parsed.data.status,
       start_chapter_id: parsed.data.startChapterId,
+      cover_url: parsed.data.coverUrl,
       updated_at: new Date().toISOString(),
       published_at:
         parsed.data.status !== "draft" ? new Date().toISOString() : null,
